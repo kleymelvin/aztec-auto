@@ -7,7 +7,7 @@ echo "========================================="
 
 # Periksa OS
 if [ "$(lsb_release -is)" != "Ubuntu" ]; then
-  echo "Script ini hanya untuk Ubuntu!"
+  echo "❌ Script ini hanya untuk Ubuntu!"
   exit 1
 fi
 
@@ -24,18 +24,29 @@ echo "[3/7] Installing Docker..."
 curl -fsSL https://get.docker.com | sudo bash
 sudo usermod -aG docker $USER
 
-# Install Aztec CLI
+# Install Aztec CLI secara manual untuk memastikan input bisa muncul
 echo "[4/7] Installing Aztec CLI..."
-bash -i <(curl -s https://install.aztec.network)
+curl -s https://install.aztec.network -o aztec-installer.sh
+chmod +x aztec-installer.sh
+bash ./aztec-installer.sh
 
-# Dapatkan input pengguna
+# Dapatkan input pengguna secara interaktif
 echo "[5/7] Masukkan data konfigurasi Anda:"
-
-read -p "RPC Sepolia (Execution Layer): " EXEC_RPC
-read -p "RPC Sepolia (Consensus Layer): " CONS_RPC
-read -p "Private Key (tanpa 0x): " ETH_KEY
-read -p "Public Address: " ETH_ADDR
-read -p "Public IP VPS Anda: " VPS_IP
+while [[ -z "$EXEC_RPC" ]]; do
+  read -p "🛠 RPC Sepolia (Execution Layer): " EXEC_RPC
+done
+while [[ -z "$CONS_RPC" ]]; do
+  read -p "🛠 RPC Sepolia (Consensus Layer): " CONS_RPC
+done
+while [[ -z "$ETH_KEY" ]]; do
+  read -p "🔑 Private Key (tanpa 0x): " ETH_KEY
+done
+while [[ -z "$ETH_ADDR" ]]; do
+  read -p "🏦 Public Address: " ETH_ADDR
+done
+while [[ -z "$VPS_IP" ]]; do
+  read -p "🌐 Public IP VPS Anda: " VPS_IP
+done
 
 echo ""
 echo "Konfirmasi Data:"
@@ -46,7 +57,7 @@ echo "Public IP     : $VPS_IP"
 read -p "Lanjutkan instalasi? (y/n): " CONFIRM
 
 if [[ "$CONFIRM" != "y" ]]; then
-  echo "❌ Batal."
+  echo "❌ Instalasi dibatalkan."
   exit 1
 fi
 
@@ -63,7 +74,7 @@ aztec start --node --archiver --sequencer \
 
 # Tambah cronjob auto update
 echo "[7/7] Menambahkan cronjob auto-update..."
-(crontab -l ; echo "0 4 * * * aztec-up alpha-testnet >> ~/aztec-update.log 2>&1") | crontab -
+(crontab -l 2>/dev/null ; echo "0 4 * * * aztec-up alpha-testnet >> ~/aztec-update.log 2>&1") | crontab -
 
 # Buat monitoring script
 cat <<EOF > ~/monitor.sh
